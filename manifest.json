@@ -1,0 +1,14 @@
+{
+  "name": "Uysallar İnşaat ERP",
+  "short_name": "Uysallar",
+  "description": "Uysallar İnşaat proje ve gider yönetim sistemi",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uysallar İnşaat — ERP</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f59e0b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Uysallar">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Uysallar İnşaat">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --sidebar-bg: #111827;
+            --sidebar-text: #9ca3af;
+            --sidebar-hover: #f9fafb;
+            --sidebar-active-bg: rgba(245, 158, 11, 0.12);
+            --brand: #f59e0b;
+            --brand-dark: #d97706;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --primary: #3b82f6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
+            --success-light: #f0fdf4;
+            --radius: 10px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: var(--bg);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            color: var(--text-main);
+            font-size: 14px;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 240px;
+            background: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .logo-area {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 34px; height: 34px;
+            background: var(--brand);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 16px;
+        }
+
+        .logo-text { color: white; font-weight: 700; font-size: 15px; letter-spacing: -0.3px; }
+        .logo-text span { color: var(--brand); }
+
+        .menu-container { padding: 12px 0; overflow-y: auto; flex: 1; }
+
+        .menu-category {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #4b5563;
+            padding: 16px 20px 6px;
+            font-weight: 600;
+        }
+
+        .menu-item {
+            padding: 9px 16px;
+            margin: 2px 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            color: var(--sidebar-text);
+            font-size: 13.5px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+
+        .menu-item i { width: 18px; text-align: center; font-size: 13px; opacity: 0.8; }
+
+        .menu-item:hover { background: rgba(255,255,255,0.06); color: var(--sidebar-hover); }
+
+        .menu-item.active {
+            background: var(--sidebar-active-bg);
+            color: var(--brand);
+        }
+        .menu-item.active i { opacity: 1; }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .user-card {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 32px; height: 32px;
+            background: var(--brand);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 13px;
+        }
+
+        .user-info .name { color: white; font-size: 13px; font-weight: 600; }
+        .user-info .role { color: #6b7280; font-size: 11px; }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        .topbar {
+            height: 64px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 28px;
+            position: sticky; top: 0; z-index: 50;
+            gap: 16px;
+        }
+
+        .topbar-left { display: flex; align-items: center; gap: 12px; }
+        .breadcrumb { font-size: 13px; color: var(--text-muted); }
+        .breadcrumb strong { color: var(--text-main); font-weight: 600; }
+
+        .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+        .topbar-search {
+            display: flex; align-items: center;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 7px 14px;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+            width: 220px;
+        }
+        .topbar-search input { border: none; background: transparent; outline: none; font-size: 13px; color: var(--text-main); width: 100%; }
+
+        .topbar-badge {
+            position: relative;
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        .topbar-badge .dot {
+            position: absolute; top: 6px; right: 6px;
+            width: 7px; height: 7px;
+            background: var(--danger); border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .content-scroll { flex: 1; overflow-y: auto; }
+
+        /* ===== SECTIONS ===== */
+        .view-section { display: none; padding: 28px; }
+        .view-section.active { display: block; }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 6px;
+            letter-spacing: -0.4px;
+        }
+
+        .page-subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .card-padded { padding: 24px; }
+
+        /* ===== KPI CARDS ===== */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            padding: 20px 22px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            transition: box-shadow 0.2s;
+        }
+
+        .kpi-card:hover { box-shadow: var(--shadow-md); }
+
+        .kpi-icon-wrap {
+            width: 44px; height: 44px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .kpi-icon-wrap.blue { background: #eff6ff; color: var(--primary); }
+        .kpi-icon-wrap.green { background: var(--success-light); color: var(--success); }
+        .kpi-icon-wrap.orange { background: #fffbeb; color: var(--warning); }
+        .kpi-icon-wrap.red { background: var(--danger-light); color: var(--danger); }
+
+        .kpi-body { flex: 1; }
+        .kpi-label { font-size: 12px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
+        .kpi-value { font-size: 22px; font-weight: 700; color: var(--text-main); margin-top: 4px; letter-spacing: -0.5px; }
+        .kpi-delta { font-size: 11px; margin-top: 3px; color: var(--success); display: flex; align-items: center; gap: 3px; }
+        .kpi-delta.down { color: var(--danger); }
+
+        /* ===== CHARTS ===== */
+        .charts-row { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; margin-bottom: 24px; }
+        @media (max-width: 900px) { .charts-row { grid-template-columns: 1fr; } }
+
+        .card-header {
+            padding: 18px 22px 0;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-title { font-size: 14px; font-weight: 700; color: var(--text-main); }
+        .card-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        .chart-container { position: relative; height: 260px; padding: 0 16px 16px; }
+
+        /* ===== TOOLBAR ===== */
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            padding: 0 12px;
+            gap: 8px;
+            flex-grow: 1;
+            min-width: 200px;
+        }
+
+        .search-box i { color: var(--text-muted); font-size: 13px; }
+
+        .search-box input {
+            border: none; outline: none;
+            padding: 9px 0;
+            background: transparent;
+            font-size: 13px;
+            width: 100%;
+            color: var(--text-main);
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 9px 16px;
+            border: none; border-radius: 8px;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #2563eb; }
+
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #059669; }
+
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #dc2626; }
+
+        .btn-brand { background: var(--brand); color: white; }
+        .btn-brand:hover { background: var(--brand-dark); }
+
+        .btn-outline {
+            background: white;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+        .btn-outline:hover { background: var(--bg); }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
+        /* ===== TABLE ===== */
+        .table-wrapper { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+        thead th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            background: #f9fafb;
+            border-bottom: 1px solid var(--border);
+        }
+
+        thead th:first-child { border-radius: 0; }
+
+        tbody td {
+            padding: 13px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover td { background: #f9fafb; }
+
+        .actions { display: flex; gap: 4px; }
+
+        .action-btn {
+            width: 30px; height: 30px;
+            border: none; border-radius: 6px;
+            cursor: pointer; font-size: 12px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .action-btn.edit { background: #eff6ff; color: var(--primary); }
+        .action-btn.edit:hover { background: #dbeafe; }
+
+        .action-btn.delete { background: var(--danger-light); color: var(--danger); }
+        .action-btn.delete:hover { background: #fecaca; }
+
+        /* ===== BADGES ===== */
+        .badge {
+            display: inline-flex; align-items: center;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+
+        .badge-paid { background: var(--success-light); color: #059669; }
+        .badge-pending { background: #fffbeb; color: #b45309; }
+        .badge-active { background: var(--success-light); color: #059669; }
+        .badge-planning { background: #eff6ff; color: #2563eb; }
+
+        /* ===== TABLE FOOTER ===== */
+        .table-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .table-count { font-size: 12px; color: var(--text-muted); }
+
+        /* ===== FILTERS ===== */
+        .filter-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group { display: flex; flex-direction: column; flex: 1; min-width: 130px; }
+
+        .filter-group label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 9px 11px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            background: var(--card-bg);
+            color: var(--text-main);
+            transition: border 0.15s;
+        }
+
+        .filter-group select:focus, .filter-group input:focus { border-color: var(--primary); }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal-content {
+            background: white;
+            width: 680px;
+            border-radius: 14px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalIn 0.2s ease;
+        }
+
+        @keyframes modalIn {
+            from { transform: translateY(-12px) scale(0.98); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 { font-size: 16px; font-weight: 700; }
+
+        .modal-close {
+            width: 30px; height: 30px;
+            border: none; background: var(--bg);
+            border-radius: 6px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted); font-size: 14px;
+            transition: background 0.15s;
+        }
+        .modal-close:hover { background: var(--border); }
+
+        .modal-body { padding: 24px; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .form-grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            font-family: inherit;
+            color: var(--text-main);
+            transition: border 0.15s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .upload-section { display: flex; gap: 16px; margin-bottom: 20px; }
+
+        .upload-box {
+            flex: 1; border: 2px dashed var(--border);
+            border-radius: 10px;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            height: 110px; color: var(--text-muted);
+            cursor: pointer; background: var(--bg);
+            transition: all 0.2s; font-size: 12px; gap: 6px;
+        }
+
+        .upload-box:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
+        .upload-box i { font-size: 24px; }
+
+        .preview-box {
+            flex: 1; border: 1px solid var(--border);
+            border-radius: 10px;
+            display: flex; justify-content: center; align-items: center;
+            height: 110px; background: var(--bg); overflow: hidden;
+        }
+
+        .preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .preview-box i { font-size: 36px; color: #d1d5db; }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex; justify-content: flex-end; gap: 10px;
+        }
+
+        /* ===== TOGGLE ===== */
+        .toggle-switch {
+            width: 36px; height: 20px;
+            background: var(--success);
+            border-radius: 20px;
+            position: relative; cursor: pointer;
+            transition: background 0.3s;
+            display: inline-block; flex-shrink: 0;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 16px; height: 16px;
+            background: white; border-radius: 50%;
+            top: 2px; right: 2px;
+            transition: right 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.inactive { background: #d1d5db; }
+        .toggle-switch.inactive::after { right: 18px; }
+
+        /* ===== PROJE KARTLARI ===== */
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .project-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            transition: box-shadow 0.2s;
+        }
+
+        .project-card:hover { box-shadow: var(--shadow-md); }
+
+        .project-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .project-card-name { font-weight: 700; font-size: 15px; }
+        .project-card-meta { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+
+        .budget-bar-wrap { margin-top: 14px; }
+        .budget-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+        .budget-bar { height: 6px; background: #f3f4f6; border-radius: 4px; overflow: hidden; }
+        .budget-bar-fill { height: 100%; background: var(--brand); border-radius: 4px; transition: width 0.4s; }
+        .budget-bar-fill.danger { background: var(--danger); }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            bottom: 24px; right: 24px;
+            background: #1f2937;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            display: none;
+            align-items: center; gap: 10px;
+            z-index: 9999;
+            animation: toastIn 0.25s ease;
+        }
+
+        .toast.show { display: flex; }
+
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--danger); }
+
+        @keyframes toastIn {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* ===== ONAY POPUP ===== */
+        .confirm-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 2000;
+            justify-content: center; align-items: center;
+        }
+
+        .confirm-overlay.open { display: flex; }
+
+        .confirm-box {
+            background: white;
+            border-radius: 12px;
+            padding: 28px;
+            width: 380px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            text-align: center;
+            animation: modalIn 0.2s ease;
+        }
+
+        .confirm-box .icon { font-size: 36px; color: var(--danger); margin-bottom: 12px; }
+        .confirm-box h4 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+        .confirm-box p { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+        .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center; padding: 60px 24px; color: var(--text-muted);
+        }
+        .empty-state i { font-size: 40px; margin-bottom: 12px; opacity: 0.3; }
+        .empty-state h4 { font-size: 15px; color: var(--text-main); margin-bottom: 6px; }
+        .empty-state p { font-size: 13px; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .form-grid-3 { grid-template-columns: 1fr 1fr; }
+            .kpi-row { grid-template-columns: 1fr 1fr; }
+            .topbar-search { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="logo-area">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="36" height="36" rx="8" fill="#f59e0b"/>
+          <polygon points="18,5 31,17 27,17 27,30 9,30 9,17 5,17" fill="white"/>
+          <rect x="11" y="19" width="5" height="5" rx="1" fill="#f59e0b"/>
+          <rect x="20" y="19" width="5" height="5" rx="1" fill="#f59e0b"/>
+          <rect x="14" y="24" width="8" height="6" rx="1" fill="#f59e0b"/>
+        </svg>
+        <div>
+          <div class="logo-text" style="font-size:14px; letter-spacing:-0.3px;">Uysallar <span>İnşaat</span></div>
+          <div style="font-size:9px; color:#9ca3af; letter-spacing:0.5px; margin-top:1px;">ERP SİSTEMİ</div>
+        </div>
+    </div>
+
+    <div class="menu-container">
+        <div class="menu-category">Genel</div>
+        <a class="menu-item active" id="btn-dashboard" onclick="sayfaDegistir('dashboard')">
+            <i class="fa-solid fa-chart-pie"></i> Kontrol Paneli
+        </a>
+
+        <div class="menu-category">Proje Yönetimi</div>
+        <a class="menu-item" id="btn-yeniproje" onclick="sayfaDegistir('yeniproje')">
+            <i class="fa-solid fa-folder-plus"></i> Yeni Proje
+        </a>
+        <a class="menu-item" id="btn-projeler" onclick="sayfaDegistir('projeler')">
+            <i class="fa-solid fa-layer-group"></i> Projeler
+        </a>
+
+        <div class="menu-category">Gider Yönetimi</div>
+        <a class="menu-item" onclick="openModal()">
+            <i class="fa-solid fa-bolt"></i> Hızlı Gider Ekle
+        </a>
+        <a class="menu-item" id="btn-giderler" onclick="sayfaDegistir('giderler')">
+            <i class="fa-solid fa-scale-balanced"></i> Giderler
+        </a>
+        <a class="menu-item" id="btn-kategoriler" onclick="sayfaDegistir('kategoriler')">
+            <i class="fa-solid fa-list"></i> Kategoriler
+        </a>
+        <a class="menu-item" id="btn-etiketler" onclick="sayfaDegistir('etiketler')">
+            <i class="fa-solid fa-tags"></i> Etiketler
+        </a>
+        <a class="menu-item" id="btn-calisanlar" onclick="sayfaDegistir('calisanlar')">
+            <i class="fa-solid fa-users"></i> Çalışanlar
+        </a>
+
+        <div class="menu-category">Hesap</div>
+        <a class="menu-item" id="btn-profilim" onclick="sayfaDegistir('profilim')">
+            <i class="fa-solid fa-user"></i> Profilim
+        </a>
+        <a class="menu-item" id="btn-lisans" onclick="sayfaDegistir('lisans')">
+            <i class="fa-solid fa-arrows-rotate"></i> Lisans
+        </a>
+        <a class="menu-item" id="btn-sifre" onclick="sayfaDegistir('sifre')">
+            <i class="fa-solid fa-key"></i> Şifre Değiştir
+        </a>
+    </div>
+
+    <div class="sidebar-footer">
+        <div class="user-card">
+            <div class="user-avatar">AÇ</div>
+            <div class="user-info">
+                <div class="name">Ahmet Çelik</div>
+                <div class="role">Uysallar İnşaat</div>
+            </div>
+            <i class="fa-solid fa-power-off" style="margin-left:auto; color:#6b7280; font-size:13px;"></i>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="breadcrumb" id="breadcrumb"><strong>Kontrol Paneli</strong></div>
+        </div>
+        <div class="topbar-right">
+            <div class="topbar-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" placeholder="Hızlı arama...">
+            </div>
+            <div class="topbar-badge">
+                <i class="fa-solid fa-bell"></i>
+                <span class="dot"></span>
+            </div>
+            <div class="topbar-badge">
+                <i class="fa-solid fa-gear"></i>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- PWA Yükleme Çubuğu -->
+    <div id="pwa-install-bar" style="display:none; background:#1d4ed8; color:white; padding:10px 20px; align-items:center; justify-content:space-between; font-size:13px; gap:12px; flex-shrink:0;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <i class="fa-solid fa-mobile-screen"></i>
+        <span>Uygulamayı telefonunuza yükleyin — internet olmadan da çalışır!</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button onclick="installPWA()" style="background:white; color:#1d4ed8; border:none; padding:6px 14px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12px;">Yükle</button>
+        <button onclick="this.closest('#pwa-install-bar').style.display='none'" style="background:rgba(255,255,255,0.2); color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    <div class="content-scroll">
+
+        <!-- DASHBOARD -->
+        <div id="view-dashboard" class="view-section active">
+            <div class="page-title">Kontrol Paneli</div>
+            <div class="page-subtitle">Proje ve gider özetinize genel bakış</div>
+
+            <div class="kpi-row">
+                <div class="kpi-card">
+                    <div class="kpi-icon-wrap blue"><i class="fa-solid fa-file-invoice"></i></div>
+                    <div class="kpi-body">
+                        <div class="kpi-label">Kayıt Sayısı</div>
+                        <div class="kpi-value" id="kpi-kayit">0</div>
+                        <div class="kpi-delta"><i class="fa-solid fa-arrow-up"></i> Toplam gider kaydı</div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon-wrap red"><i class="fa-solid fa-chart-line"></i></div>
+                    <div class="kpi-body">
+                        <div class="kpi-label">Toplam Gider</div>
+                        <div class="kpi-value" id="kpi-toplam">0 ₺</div>
+                        <div class="kpi-delta down"><i class="fa-solid fa-arrow-down"></i> Gerçekleşen</div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon-wrap orange"><i class="fa-solid fa-clock"></i></div>
+                    <div class="kpi-body">
+                        <div class="kpi-label">Bekleyen</div>
+                        <div class="kpi-value" id="kpi-bekleyen">0 ₺</div>
+                        <div class="kpi-delta down"><i class="fa-solid fa-hourglass"></i> Ödenecek</div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon-wrap green"><i class="fa-solid fa-check-double"></i></div>
+                    <div class="kpi-body">
+                        <div class="kpi-label">Ödenen</div>
+                        <div class="kpi-value" id="kpi-odenen">0 ₺</div>
+                        <div class="kpi-delta"><i class="fa-solid fa-check"></i> Tamamlandı</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-row">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Proje Harcama Dağılımı</div>
+                            <div class="card-subtitle">Projelere göre toplam harcama</div>
+                        </div>
+                    </div>
+                    <div class="chart-container"><canvas id="barChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Kategori Dağılımı</div>
+                            <div class="card-subtitle">Türe göre yüzdesel dağılım</div>
+                        </div>
+                    </div>
+                    <div class="chart-container"><canvas id="pieChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Son Giderler -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Son Giderler</div>
+                    <a onclick="sayfaDegistir('giderler')" style="font-size:12px; color:var(--primary); cursor:pointer; font-weight:600;">Tümünü gör →</a>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Gider Adı</th><th>Kategori</th><th>Proje</th><th>Tutar</th><th>Durum</th></tr></thead>
+                        <tbody id="sonGiderlerTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- YENİ PROJE -->
+        <div id="view-yeniproje" class="view-section">
+            <div class="page-title">Yeni Proje</div>
+            <div class="page-subtitle">Sisteme yeni bir inşaat projesi ekleyin</div>
+
+            <div class="card card-padded" style="max-width: 600px;">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Proje Adı</label>
+                        <input type="text" id="newProjeAdi" placeholder="Örn: Güneş Sitesi">
+                    </div>
+                    <div class="form-group">
+                        <label>Başlangıç Tarihi</label>
+                        <input type="date" id="newProjeTarihi">
+                    </div>
+                    <div class="form-group">
+                        <label>Planlanan Bütçe (₺)</label>
+                        <input type="number" id="newProjeButce" placeholder="Örn: 500000">
+                    </div>
+                    <div class="form-group">
+                        <label>Proje Sorumlusu</label>
+                        <select id="newProjeSorumlusu"><option>Ahmet Çelik</option></select>
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="projeyiBaslat()"><i class="fa-solid fa-save"></i> Projeyi Başlat</button>
+            </div>
+        </div>
+
+        <!-- PROJELER -->
+        <div id="view-projeler" class="view-section">
+            <div class="page-title">Projeler</div>
+            <div class="page-subtitle">Tüm aktif ve planlanan projelerin listesi</div>
+            <div class="toolbar">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Proje ara..." id="projeArama" oninput="renderProjeler()">
+                </div>
+                <button class="btn btn-primary" onclick="sayfaDegistir('yeniproje')"><i class="fa-solid fa-plus"></i> Yeni Proje</button>
+            </div>
+            <div class="project-grid" id="projeGrid"></div>
+        </div>
+
+        <!-- GİDERLER -->
+        <div id="view-giderler" class="view-section">
+            <div class="page-title">Giderler</div>
+            <div class="page-subtitle">Tüm gider kayıtlarını görüntüleyin ve yönetin</div>
+
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Çalışan</label>
+                    <select id="filtreCalisan" onchange="renderGiderler()"><option>Tüm Çalışanlar</option><option>Ahmet Çelik</option></select>
+                </div>
+                <div class="filter-group">
+                    <label>Kategori</label>
+                    <select id="filtreKategori" onchange="renderGiderler()"><option>Tüm Kategoriler</option><option>Duvar</option><option>Elektrik Tesisatı</option><option>Mermer</option></select>
+                </div>
+                <div class="filter-group">
+                    <label>Tür</label>
+                    <select id="filtreTuru" onchange="renderGiderler()"><option>Hepsi</option><option>Kdv'li</option><option>Kdv'siz</option></select>
+                </div>
+                <div class="filter-group">
+                    <label>Durum</label>
+                    <select id="filtreDurum" onchange="renderGiderler()"><option>Tüm Durumlar</option><option>Ödendi</option><option>Ödenecek</option></select>
+                </div>
+                <div class="search-box" style="margin-bottom:0; flex: 2; min-width: 200px;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="filtreArama" placeholder="Gider veya proje adı ara..." oninput="renderGiderler()">
+                </div>
+                <button class="btn btn-primary" onclick="openModal()"><i class="fa-solid fa-plus"></i> Yeni Gider</button>
+            </div>
+
+            <div class="card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Gider Adı</th>
+                                <th>Kategori</th>
+                                <th>Çalışan</th>
+                                <th>Proje</th>
+                                <th>Tutar</th>
+                                <th>Tür</th>
+                                <th>Tarih</th>
+                                <th>Durum</th>
+                                <th>İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="giderlerTbody"></tbody>
+                    </table>
+                </div>
+                <div class="table-footer">
+                    <span class="table-count" id="kayitSayisiBilgisi">0 kayıt</span>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-outline btn-sm" onclick="exceleAktar()"><i class="fa-solid fa-file-excel" style="color:var(--success)"></i> Excel</button>
+                        <button class="btn btn-outline btn-sm" onclick="pdfAktar()"><i class="fa-solid fa-file-pdf" style="color:var(--danger)"></i> PDF</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KATEGORİLER -->
+        <div id="view-kategoriler" class="view-section">
+            <div class="page-title">Gider Kategorileri</div>
+            <div class="page-subtitle">Gider kategorilerini tanımlayın ve yönetin</div>
+            <div class="toolbar">
+                <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="kategoriArama" placeholder="Kategori ara..." oninput="renderKategoriler()"></div>
+                <button class="btn btn-primary" onclick="yeniKategori()"><i class="fa-solid fa-plus"></i> Yeni Kategori</button>
+            </div>
+            <div class="card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Kategori Adı</th><th>Eklenme Tarihi</th><th>Durum</th><th>İşlem</th></tr></thead>
+                        <tbody id="kategorilerTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ETİKETLER -->
+        <div id="view-etiketler" class="view-section">
+            <div class="page-title">Gider Etiketleri</div>
+            <div class="page-subtitle">Giderlere atayabileceğiniz etiketler</div>
+            <div class="toolbar">
+                <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="etiketArama" placeholder="Etiket ara..." oninput="renderEtiketler()"></div>
+                <button class="btn btn-primary" onclick="yeniEtiket()"><i class="fa-solid fa-plus"></i> Yeni Etiket</button>
+            </div>
+            <div class="card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Etiket Adı</th><th>Eklenme Tarihi</th><th>Durum</th><th>İşlem</th></tr></thead>
+                        <tbody id="etiketlerTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ÇALIŞANLAR -->
+        <div id="view-calisanlar" class="view-section">
+            <div class="page-title">Çalışanlar</div>
+            <div class="page-subtitle">Sisteme kayıtlı çalışanlar</div>
+            <div class="toolbar">
+                <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="calisanArama" placeholder="Çalışan ara..." oninput="renderCalisanlar()"></div>
+                <button class="btn btn-primary" onclick="yeniCalisan()"><i class="fa-solid fa-plus"></i> Yeni Çalışan</button>
+            </div>
+            <div class="card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Çalışan Adı Soyadı</th><th>Eklenme Tarihi</th><th>Durum</th><th>İşlem</th></tr></thead>
+                        <tbody id="calisanlarTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROFİL -->
+        <div id="view-profilim" class="view-section">
+            <div class="page-title">Profilim</div>
+            <div class="page-subtitle">Hesap bilgilerinizi güncelleyin</div>
+            <div class="card card-padded" style="max-width:500px;">
+                <div class="form-grid">
+                    <div class="form-group"><label>Ad Soyad</label><input type="text" value="Ahmet Çelik"></div>
+                    <div class="form-group"><label>E-Posta</label><input type="email" value="info@uysallarinsaat.com"></div>
+                    <div class="form-group"><label>Telefon</label><input type="tel" placeholder="+90 5xx xxx xx xx"></div>
+                    <div class="form-group"><label>Firma</label><input type="text" value="Uysallar İnşaat Ltd. Şti."></div>
+                </div>
+                <button class="btn btn-primary"><i class="fa-solid fa-save"></i> Güncelle</button>
+            </div>
+        </div>
+
+        <!-- LİSANS -->
+        <div id="view-lisans" class="view-section">
+            <div class="page-title">Lisans Yönetimi</div>
+            <div class="page-subtitle">Lisans durumunuz ve proje haklarınız</div>
+            <div class="card card-padded" style="max-width:500px;">
+                <div style="display:flex; align-items:center; gap:14px; padding:16px; background:var(--success-light); border-radius:8px; margin-bottom:20px;">
+                    <i class="fa-solid fa-circle-check" style="color:var(--success); font-size:28px;"></i>
+                    <div>
+                        <div style="font-weight:700; color:#065f46;">Lisans Aktif</div>
+                        <div style="font-size:12px; color:#059669;">Bitiş: 31.12.2026</div>
+                    </div>
+                </div>
+                <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px;">Kalan Proje Hakkı</div>
+                <div style="font-size:32px; font-weight:800; color:var(--text-main); letter-spacing:-1px;">9.998 <span style="font-size:16px; font-weight:500; color:var(--text-muted);">adet</span></div>
+            </div>
+        </div>
+
+        <!-- ŞİFRE -->
+        <div id="view-sifre" class="view-section">
+            <div class="page-title">Şifre Değiştir</div>
+            <div class="page-subtitle">Hesap güvenliğiniz için şifrenizi düzenli güncelleyin</div>
+            <div class="card card-padded" style="max-width:400px;">
+                <div class="form-group" style="margin-bottom:14px;"><label>Mevcut Şifre</label><input type="password" placeholder="••••••••"></div>
+                <div class="form-group" style="margin-bottom:14px;"><label>Yeni Şifre</label><input type="password" placeholder="••••••••"></div>
+                <div class="form-group" style="margin-bottom:20px;"><label>Yeni Şifre (Tekrar)</label><input type="password" placeholder="••••••••"></div>
+                <button class="btn btn-danger"><i class="fa-solid fa-key"></i> Şifreyi Güncelle</button>
+            </div>
+        </div>
+
+    </div><!-- /content-scroll -->
+</div><!-- /main-content -->
+
+<!-- GİDER MODALI -->
+<div id="expenseModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalBaslik">Yeni Gider</h3>
+            <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-grid form-grid-3">
+                <div class="form-group"><label>Gider Adı</label><input type="text" id="giderAdi" placeholder="Örn: Hasan ustaya ödeme"></div>
+                <div class="form-group"><label>Tutar (₺)</label><input type="number" id="giderTutari" placeholder="0"></div>
+                <div class="form-group"><label>KDV Türü</label><select id="giderTuru"><option>Kdv'li</option><option>Kdv'siz</option></select></div>
+                <div class="form-group"><label>Tarih</label><input type="date" id="giderTarihi"></div>
+                <div class="form-group"><label>Proje</label><select id="giderProjesi"></select></div>
+                <div class="form-group"><label>Kategori</label><select id="giderKategorisi"><option>Duvar</option><option>Elektrik Tesisatı</option><option>Mermer</option></select></div>
+                <div class="form-group"><label>Durum</label><select id="giderDurumu"><option>Ödendi</option><option>Ödenecek</option></select></div>
+            </div>
+            <div style="display:flex; gap:12px; margin-bottom:6px;">
+                <div style="flex:1; font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.3px;">Fatura / Fiş</div>
+                <div style="flex:1; font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.3px;">Önizleme</div>
+            </div>
+            <div class="upload-section">
+                <input type="file" id="dosyaSecici" style="display:none;" accept="image/*,.pdf" onchange="dosyaOnizle(event)">
+                <div class="upload-box" onclick="document.getElementById('dosyaSecici').click()">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span id="upload-text">Dosya seçmek için tıklayın</span>
+                </div>
+                <div class="preview-box" id="preview-box"><i class="fa-solid fa-image"></i></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal()">İptal</button>
+            <button class="btn btn-primary" onclick="gideriKaydet()"><i class="fa-solid fa-save"></i> Kaydet</button>
+        </div>
+    </div>
+</div>
+
+<!-- ONAY DİYALOĞU -->
+<div id="confirmOverlay" class="confirm-overlay">
+    <div class="confirm-box">
+        <div class="icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <h4 id="confirmTitle">Emin misiniz?</h4>
+        <p id="confirmMsg">Bu işlem geri alınamaz.</p>
+        <div class="confirm-btns">
+            <button class="btn btn-outline" onclick="closeConfirm()">İptal</button>
+            <button class="btn btn-danger" id="confirmBtn">Sil</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+    <i class="fa-solid fa-check-circle"></i>
+    <span id="toastMsg">İşlem başarılı</span>
+</div>
+
+<script>
+    // ========== VERİ ==========
+    let giderlerListesi = [
+        { id: 1, adi: "Hasan Usta ödemesi", kategori: "Duvar", calisan: "Ahmet Çelik", proje: "Huzur Apt.", fiyat: 300, turu: "Kdv'siz", tarih: "2026-01-15", durum: "Ödendi" },
+        { id: 2, adi: "Diafoncu malzeme", kategori: "Elektrik Tesisatı", calisan: "Ahmet Çelik", proje: "Lalezar Villa", fiyat: 7500, turu: "Kdv'li", tarih: "2026-02-10", durum: "Ödenecek" },
+        { id: 3, adi: "Mermerci Serhat", kategori: "Mermer", calisan: "Ahmet Çelik", proje: "Huzur Apt.", fiyat: 3500, turu: "Kdv'siz", tarih: "2026-03-08", durum: "Ödenecek" }
+    ];
+
+    let projelerListesi = [
+        { id: 101, ad: "Huzur Apt.", tarih: "2026-01-10", sorumlu: "Ahmet Çelik", butce: 500000, durum: "Aktif" },
+        { id: 102, ad: "Lalezar Villa", tarih: "2026-03-15", sorumlu: "Ahmet Çelik", butce: 350000, durum: "Planlamada" }
+    ];
+
+    let kategoriListesi = [
+        { ad: "Alçıpan", tarih: "27.11.2019", aktif: true },
+        { ad: "Ankastre", tarih: "27.11.2019", aktif: true },
+        { ad: "Beton-Demir", tarih: "27.11.2019", aktif: true },
+        { ad: "Duvar", tarih: "27.11.2019", aktif: true },
+        { ad: "Elektrik Tesisatı", tarih: "27.11.2019", aktif: true },
+        { ad: "Mermer", tarih: "27.11.2019", aktif: true }
+    ];
+
+    let etiketListesi = [
+        { ad: "Diğer", tarih: "29.11.2019", aktif: true },
+        { ad: "İşçilik", tarih: "29.11.2019", aktif: true },
+        { ad: "Malzeme", tarih: "29.11.2019", aktif: true }
+    ];
+
+    let calisanListesi = [
+        { ad: "Ahmet Çelik", tarih: "29.11.2019", aktif: true },
+        { ad: "Mikail Karaca", tarih: "15.08.2018", aktif: true }
+    ];
+
+    let anlikFiltrelenmisListe = [...giderlerListesi];
+    let barChartInst = null, pieChartInst = null;
+    let duzenlenenGiderId = null;
+    let confirmCallback = null;
+
+    // ========== YARDIMCI ==========
+    function fmt(n) { return new Intl.NumberFormat('tr-TR').format(n); }
+    function bugunTarih() {
+        const d = new Date();
+        return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+    }
+
+    function showToast(msg, type = 'success') {
+        const t = document.getElementById('toast');
+        document.getElementById('toastMsg').innerText = msg;
+        t.className = `toast show ${type}`;
+        t.querySelector('i').className = type === 'success' ? 'fa-solid fa-check-circle' : 'fa-solid fa-circle-xmark';
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function showConfirm(title, msg, cb) {
+        document.getElementById('confirmTitle').innerText = title;
+        document.getElementById('confirmMsg').innerText = msg;
+        confirmCallback = cb;
+        document.getElementById('confirmOverlay').classList.add('open');
+    }
+
+    function closeConfirm() {
+        document.getElementById('confirmOverlay').classList.remove('open');
+        confirmCallback = null;
+    }
+
+    document.getElementById('confirmBtn').onclick = () => {
+        if (confirmCallback) confirmCallback();
+        closeConfirm();
+    };
+
+    // ========== SAYFA GEÇİŞ ==========
+    const pageNames = {
+        dashboard: 'Kontrol Paneli', yeniproje: 'Yeni Proje', projeler: 'Projeler',
+        giderler: 'Giderler', kategoriler: 'Kategoriler', etiketler: 'Etiketler',
+        calisanlar: 'Çalışanlar', profilim: 'Profilim', lisans: 'Lisans', sifre: 'Şifre Değiştir'
+    };
+
+    function sayfaDegistir(hedef) {
+        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+        const btn = document.getElementById('btn-' + hedef);
+        if (btn) btn.classList.add('active');
+
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        const view = document.getElementById('view-' + hedef);
+        if (view) view.classList.add('active');
+
+        document.getElementById('breadcrumb').innerHTML = `<span style='color:var(--text-muted)'>Uysallar İnşaat</span> <span style='color:var(--text-muted)'>/</span> <strong>${pageNames[hedef] || hedef}</strong>`;
+
+        if (hedef === 'dashboard') renderDashboard();
+        if (hedef === 'giderler') renderGiderler();
+        if (hedef === 'projeler') renderProjeler();
+        if (hedef === 'kategoriler') renderKategoriler();
+        if (hedef === 'etiketler') renderEtiketler();
+        if (hedef === 'calisanlar') renderCalisanlar();
+    }
+
+    // ========== DROPDOWNS ==========
+    function dropdownlariGuncelle() {
+        const sel = document.getElementById('giderProjesi');
+        if (!sel) return;
+        sel.innerHTML = projelerListesi.map(p => `<option value="${p.ad}">${p.ad}</option>`).join('') + '<option value="-">-</option>';
+
+        // Gider filtreleme dropdown güncelle
+        const filtreCalisan = document.getElementById('filtreCalisan');
+        if (filtreCalisan) {
+            const current = filtreCalisan.value;
+            filtreCalisan.innerHTML = '<option>Tüm Çalışanlar</option>' + calisanListesi.map(c => `<option>${c.ad}</option>`).join('');
+            filtreCalisan.value = current;
+        }
+
+        const filtreKategori = document.getElementById('filtreKategori');
+        if (filtreKategori) {
+            const current = filtreKategori.value;
+            filtreKategori.innerHTML = '<option>Tüm Kategoriler</option>' + kategoriListesi.map(k => `<option>${k.ad}</option>`).join('');
+            filtreKategori.value = current;
+        }
+
+        const giderKat = document.getElementById('giderKategorisi');
+        if (giderKat) {
+            giderKat.innerHTML = kategoriListesi.map(k => `<option>${k.ad}</option>`).join('');
+        }
+    }
+
+    // ========== TOGGLE ==========
+    function toggleSwitch(el) { el.classList.toggle('inactive'); }
+    function getToggleHTML(isActive) {
+        return `<div class="toggle-switch ${isActive ? '' : 'inactive'}" onclick="toggleSwitch(this)"></div>`;
+    }
+
+    // ========== DASHBOARD ==========
+    function renderDashboard() {
+        const toplam = giderlerListesi.reduce((s, g) => s + Number(g.fiyat), 0);
+        const bekleyen = giderlerListesi.filter(g => g.durum === "Ödenecek").reduce((s, g) => s + Number(g.fiyat), 0);
+        const odenen = giderlerListesi.filter(g => g.durum === "Ödendi").reduce((s, g) => s + Number(g.fiyat), 0);
+
+        document.getElementById('kpi-kayit').innerText = giderlerListesi.length;
+        document.getElementById('kpi-toplam').innerText = fmt(toplam) + ' ₺';
+        document.getElementById('kpi-bekleyen').innerText = fmt(bekleyen) + ' ₺';
+        document.getElementById('kpi-odenen').innerText = fmt(odenen) + ' ₺';
+
+        // Proje bazlı
+        const projData = {};
+        projelerListesi.forEach(p => { projData[p.ad] = 0; });
+        const katData = {};
+        giderlerListesi.forEach(g => {
+            projData[g.proje] = (projData[g.proje] || 0) + Number(g.fiyat);
+            katData[g.kategori] = (katData[g.kategori] || 0) + Number(g.fiyat);
+        });
+
+        if (barChartInst) barChartInst.destroy();
+        barChartInst = new Chart(document.getElementById('barChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(projData),
+                datasets: [{ label: 'Harcama (₺)', data: Object.values(projData), backgroundColor: '#3b82f6', borderRadius: 6 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } } }
+        });
+
+        if (pieChartInst) pieChartInst.destroy();
+        pieChartInst = new Chart(document.getElementById('pieChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(katData),
+                datasets: [{ data: Object.values(katData), backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'], borderWidth: 0 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+        });
+
+        // Son 5 gider
+        const tbody = document.getElementById('sonGiderlerTbody');
+        tbody.innerHTML = '';
+        giderlerListesi.slice(0, 5).forEach(g => {
+            const badge = g.durum === 'Ödendi' ? '<span class="badge badge-paid">Ödendi</span>' : '<span class="badge badge-pending">Bekliyor</span>';
+            tbody.innerHTML += `<tr><td>${g.adi}</td><td>${g.kategori}</td><td>${g.proje}</td><td style="font-weight:600;">${fmt(g.fiyat)} ₺</td><td>${badge}</td></tr>`;
+        });
+
+        if (giderlerListesi.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-inbox"></i><h4>Gider yok</h4><p>Henüz gider kaydı eklenmemiş.</p></div></td></tr>`;
+        }
+    }
+
+    // ========== PROJELER ==========
+    function projeyiBaslat() {
+        const ad = document.getElementById('newProjeAdi').value.trim();
+        if (!ad) return showToast('Proje adı giriniz!', 'error');
+        projelerListesi.push({
+            id: Date.now(), ad, tarih: document.getElementById('newProjeTarihi').value || new Date().toISOString().split('T')[0],
+            sorumlu: document.getElementById('newProjeSorumlusu').value,
+            butce: Number(document.getElementById('newProjeButce').value) || 0, durum: "Aktif"
+        });
+        document.getElementById('newProjeAdi').value = '';
+        document.getElementById('newProjeButce').value = '';
+        dropdownlariGuncelle();
+        showToast('Proje başarıyla eklendi!');
+        sayfaDegistir('projeler');
+    }
+
+    function projeSil(id) {
+        showConfirm('Projeyi Sil', 'Bu projeyi silmek istediğinize emin misiniz?', () => {
+            projelerListesi = projelerListesi.filter(p => p.id !== id);
+            renderProjeler(); dropdownlariGuncelle(); renderDashboard();
+            showToast('Proje silindi.');
+        });
+    }
+
+    function projeDuzenle(id) {
+        const pr = projelerListesi.find(p => p.id === id);
+        const yeniAd = prompt("Yeni proje adını girin:", pr.ad);
+        if (yeniAd) {
+            pr.ad = yeniAd.trim();
+            renderProjeler(); dropdownlariGuncelle();
+            showToast('Proje güncellendi.');
+        }
+    }
+
+    function renderProjeler() {
+        const arama = (document.getElementById('projeArama')?.value || '').toLowerCase();
+        const grid = document.getElementById('projeGrid');
+        grid.innerHTML = '';
+
+        const filtered = projelerListesi.filter(p => p.ad.toLowerCase().includes(arama));
+
+        if (filtered.length === 0) {
+            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="fa-solid fa-folder-open"></i><h4>Proje bulunamadı</h4><p>Yeni bir proje ekleyin.</p></div>`;
+            return;
+        }
+
+        filtered.forEach(p => {
+            const harcama = giderlerListesi.filter(g => g.proje === p.ad).reduce((s, g) => s + Number(g.fiyat), 0);
+            const oran = p.butce > 0 ? Math.min((harcama / p.butce) * 100, 100) : 0;
+            const isDanger = oran >= 80;
+            const badgeClass = p.durum === 'Aktif' ? 'badge-active' : 'badge-planning';
+
+            grid.innerHTML += `
+                <div class="project-card">
+                    <div class="project-card-top">
+                        <div>
+                            <div class="project-card-name">${p.ad}</div>
+                            <div class="project-card-meta"><i class="fa-solid fa-user" style="font-size:10px;"></i> ${p.sorumlu} &nbsp;·&nbsp; <i class="fa-solid fa-calendar" style="font-size:10px;"></i> ${p.tarih}</div>
+                        </div>
+                        <span class="badge ${badgeClass}">${p.durum}</span>
+                    </div>
+                    <div class="budget-bar-wrap">
+                        <div class="budget-bar-label">
+                            <span>Harcanan: ${fmt(harcama)} ₺</span>
+                            <span>Bütçe: ${fmt(p.butce)} ₺</span>
+                        </div>
+                        <div class="budget-bar"><div class="budget-bar-fill ${isDanger ? 'danger' : ''}" style="width:${oran}%"></div></div>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:14px;">
+                        <button class="action-btn edit" onclick="projeDuzenle(${p.id})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="action-btn delete" onclick="projeSil(${p.id})"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    // ========== GİDERLER ==========
+    function openModal() {
+        duzenlenenGiderId = null;
+        document.getElementById('modalBaslik').innerText = "Yeni Gider";
+        document.getElementById('giderAdi').value = '';
+        document.getElementById('giderTutari').value = '';
+        document.getElementById('upload-text').innerText = 'Dosya seçmek için tıklayın';
+        document.getElementById('preview-box').innerHTML = '<i class="fa-solid fa-image"></i>';
+        document.getElementById('expenseModal').classList.add('open');
+    }
+
+    function closeModal() { document.getElementById('expenseModal').classList.remove('open'); }
+
+    function gideriKaydet() {
+        const t = document.getElementById('giderTarihi').value || new Date().toISOString().split('T')[0];
+        if (duzenlenenGiderId) {
+            const g = giderlerListesi.find(x => x.id === duzenlenenGiderId);
+            g.adi = document.getElementById('giderAdi').value;
+            g.fiyat = document.getElementById('giderTutari').value;
+            g.turu = document.getElementById('giderTuru').value;
+            g.tarih = t;
+            g.proje = document.getElementById('giderProjesi').value;
+            g.kategori = document.getElementById('giderKategorisi').value;
+            g.durum = document.getElementById('giderDurumu').value;
+            showToast('Gider güncellendi.');
+        } else {
+            giderlerListesi.unshift({
+                id: Date.now(),
+                adi: document.getElementById('giderAdi').value || "Belirtilmedi",
+                fiyat: document.getElementById('giderTutari').value || 0,
+                turu: document.getElementById('giderTuru').value,
+                tarih: t,
+                proje: document.getElementById('giderProjesi').value,
+                kategori: document.getElementById('giderKategorisi').value,
+                durum: document.getElementById('giderDurumu').value,
+                calisan: "Ahmet Çelik"
+            });
+            showToast('Gider başarıyla eklendi!');
+        }
+        renderDashboard(); renderGiderler(); closeModal();
+    }
+
+    function giderDuzenle(id) {
+        duzenlenenGiderId = id;
+        const g = giderlerListesi.find(x => x.id === id);
+        document.getElementById('modalBaslik').innerText = "Gideri Düzenle";
+        document.getElementById('giderAdi').value = g.adi;
+        document.getElementById('giderTutari').value = g.fiyat;
+        document.getElementById('giderTuru').value = g.turu;
+        document.getElementById('giderTarihi').value = g.tarih;
+        document.getElementById('giderProjesi').value = g.proje;
+        document.getElementById('giderKategorisi').value = g.kategori;
+        document.getElementById('giderDurumu').value = g.durum;
+        document.getElementById('expenseModal').classList.add('open');
+    }
+
+    function giderSil(id) {
+        showConfirm('Gideri Sil', 'Bu gideri silmek istediğinize emin misiniz?', () => {
+            giderlerListesi = giderlerListesi.filter(g => g.id !== id);
+            renderGiderler(); renderDashboard();
+            showToast('Gider silindi.');
+        });
+    }
+
+    function renderGiderler() {
+        const tbody = document.getElementById('giderlerTbody');
+        tbody.innerHTML = '';
+
+        const calFiltre = document.getElementById('filtreCalisan')?.value || 'Tüm Çalışanlar';
+        const katFiltre = document.getElementById('filtreKategori')?.value || 'Tüm Kategoriler';
+        const turFiltre = document.getElementById('filtreTuru')?.value || 'Hepsi';
+        const durumFiltre = document.getElementById('filtreDurum')?.value || 'Tüm Durumlar';
+        const arama = document.getElementById('filtreArama')?.value.toLowerCase() || '';
+
+        anlikFiltrelenmisListe = giderlerListesi.filter(g => {
+            if (calFiltre !== "Tüm Çalışanlar" && g.calisan !== calFiltre) return false;
+            if (katFiltre !== "Tüm Kategoriler" && g.kategori !== katFiltre) return false;
+            if (turFiltre !== "Hepsi" && g.turu !== turFiltre) return false;
+            if (durumFiltre !== "Tüm Durumlar" && g.durum !== durumFiltre) return false;
+            if (arama && !`${g.adi} ${g.proje}`.toLowerCase().includes(arama)) return false;
+            return true;
+        });
+
+        document.getElementById('kayitSayisiBilgisi').innerText = `${anlikFiltrelenmisListe.length} kayıt`;
+
+        if (anlikFiltrelenmisListe.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="fa-solid fa-inbox"></i><h4>Gider bulunamadı</h4><p>Filtre kriterlerinizi değiştirmeyi deneyin.</p></div></td></tr>`;
+            return;
+        }
+
+        anlikFiltrelenmisListe.forEach(g => {
+            const badge = g.durum === 'Ödendi' ? '<span class="badge badge-paid">Ödendi</span>' : '<span class="badge badge-pending">Bekliyor</span>';
+            tbody.innerHTML += `
+                <tr>
+                    <td style="font-weight:500;">${g.adi}</td>
+                    <td>${g.kategori}</td>
+                    <td>${g.calisan}</td>
+                    <td>${g.proje}</td>
+                    <td style="font-weight:600;">${fmt(g.fiyat)} ₺</td>
+                    <td>${g.turu}</td>
+                    <td>${g.tarih}</td>
+                    <td>${badge}</td>
+                    <td>
+                        <div class="actions">
+                            <button class="action-btn edit" onclick="giderDuzenle(${g.id})" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+                            <button class="action-btn delete" onclick="giderSil(${g.id})" title="Sil"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+        });
+    }
+
+    // ========== KATEGORİ / ETİKET / ÇALIŞAN ==========
+    function yeniKategori() { const ad = prompt("Yeni kategori adı:"); if(ad) { kategoriListesi.push({ad: ad.trim(), tarih: bugunTarih(), aktif: true}); dropdownlariGuncelle(); renderKategoriler(); showToast('Kategori eklendi.'); } }
+    function kategoriSil(i) { showConfirm('Kategori Sil', `"${kategoriListesi[i].ad}" kategorisini silmek istediğinize emin misiniz?`, () => { kategoriListesi.splice(i,1); renderKategoriler(); dropdownlariGuncelle(); showToast('Kategori silindi.'); }); }
+    function kategoriDuzenle(i) { const n = prompt("Kategori adını düzenle:", kategoriListesi[i].ad); if(n) { kategoriListesi[i].ad = n.trim(); renderKategoriler(); dropdownlariGuncelle(); showToast('Güncellendi.'); } }
+
+    function renderKategoriler() {
+        const arama = document.getElementById('kategoriArama')?.value.toLowerCase() || '';
+        const tbody = document.getElementById('kategorilerTbody');
+        tbody.innerHTML = '';
+        let count = 0;
+        kategoriListesi.forEach((k, i) => {
+            if (k.ad.toLowerCase().includes(arama)) {
+                count++;
+                tbody.innerHTML += `<tr><td style="font-weight:500;">${k.ad}</td><td>${k.tarih}</td><td>${getToggleHTML(k.aktif)}</td><td><div class="actions"><button class="action-btn edit" onclick="kategoriDuzenle(${i})"><i class="fa-solid fa-pen"></i></button><button class="action-btn delete" onclick="kategoriSil(${i})"><i class="fa-solid fa-trash"></i></button></div></td></tr>`;
+            }
+        });
+        if (count === 0) tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="fa-solid fa-list"></i><h4>Kategori bulunamadı</h4></div></td></tr>`;
+    }
+
+    function yeniEtiket() { const ad = prompt("Yeni etiket adı:"); if(ad) { etiketListesi.push({ad: ad.trim(), tarih: bugunTarih(), aktif: true}); renderEtiketler(); showToast('Etiket eklendi.'); } }
+    function etiketSil(i) { showConfirm('Etiket Sil', 'Bu etiketi silmek istediğinize emin misiniz?', () => { etiketListesi.splice(i,1); renderEtiketler(); showToast('Etiket silindi.'); }); }
+    function etiketDuzenle(i) { const n = prompt("Etiket adını düzenle:", etiketListesi[i].ad); if(n) { etiketListesi[i].ad = n.trim(); renderEtiketler(); showToast('Güncellendi.'); } }
+
+    function renderEtiketler() {
+        const arama = document.getElementById('etiketArama')?.value.toLowerCase() || '';
+        const tbody = document.getElementById('etiketlerTbody');
+        tbody.innerHTML = '';
+        let count = 0;
+        etiketListesi.forEach((e, i) => {
+            if (e.ad.toLowerCase().includes(arama)) {
+                count++;
+                tbody.innerHTML += `<tr><td style="font-weight:500;">${e.ad}</td><td>${e.tarih}</td><td>${getToggleHTML(e.aktif)}</td><td><div class="actions"><button class="action-btn edit" onclick="etiketDuzenle(${i})"><i class="fa-solid fa-pen"></i></button><button class="action-btn delete" onclick="etiketSil(${i})"><i class="fa-solid fa-trash"></i></button></div></td></tr>`;
+            }
+        });
+        if (count === 0) tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="fa-solid fa-tags"></i><h4>Etiket bulunamadı</h4></div></td></tr>`;
+    }
+
+    function yeniCalisan() { const ad = prompt("Yeni çalışan adı:"); if(ad) { calisanListesi.push({ad: ad.trim(), tarih: bugunTarih(), aktif: true}); dropdownlariGuncelle(); renderCalisanlar(); showToast('Çalışan eklendi.'); } }
+    function calisanSil(i) { showConfirm('Çalışan Sil', 'Bu çalışanı silmek istediğinize emin misiniz?', () => { calisanListesi.splice(i,1); renderCalisanlar(); dropdownlariGuncelle(); showToast('Çalışan silindi.'); }); }
+    function calisanDuzenle(i) { const n = prompt("Çalışan adını düzenle:", calisanListesi[i].ad); if(n) { calisanListesi[i].ad = n.trim(); renderCalisanlar(); dropdownlariGuncelle(); showToast('Güncellendi.'); } }
+
+    function renderCalisanlar() {
+        const arama = document.getElementById('calisanArama')?.value.toLowerCase() || '';
+        const tbody = document.getElementById('calisanlarTbody');
+        tbody.innerHTML = '';
+        let count = 0;
+        calisanListesi.forEach((c, i) => {
+            if (c.ad.toLowerCase().includes(arama)) {
+                count++;
+                tbody.innerHTML += `<tr><td><div style="display:flex;align-items:center;gap:10px;"><div style="width:30px;height:30px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">${c.ad.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>${c.ad}</div></td><td>${c.tarih}</td><td>${getToggleHTML(c.aktif)}</td><td><div class="actions"><button class="action-btn edit" onclick="calisanDuzenle(${i})"><i class="fa-solid fa-pen"></i></button><button class="action-btn delete" onclick="calisanSil(${i})"><i class="fa-solid fa-trash"></i></button></div></td></tr>`;
+            }
+        });
+        if (count === 0) tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="fa-solid fa-users"></i><h4>Çalışan bulunamadı</h4></div></td></tr>`;
+    }
+
+    // ========== DOSYA / EXPORT ==========
+    function dosyaOnizle(event) {
+        const dosya = event.target.files[0];
+        if (!dosya) return;
+        document.getElementById('upload-text').innerText = dosya.name;
+        const previewBox = document.getElementById('preview-box');
+        if (dosya.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = e => { previewBox.innerHTML = `<img src="${e.target.result}">`; };
+            reader.readAsDataURL(dosya);
+        } else {
+            previewBox.innerHTML = `<i class="fa-solid fa-file-lines" style="color:var(--primary); font-size:36px;"></i>`;
+        }
+    }
+
+    function exceleAktar() {
+        if (anlikFiltrelenmisListe.length === 0) return showToast('Dışa aktarılacak kayıt yok!', 'error');
+        const ws = XLSX.utils.json_to_sheet(anlikFiltrelenmisListe);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Giderler");
+        XLSX.writeFile(wb, "Gider_Raporu.xlsx");
+        showToast('Excel dosyası indirildi!');
+    }
+
+    function pdfAktar() {
+        if (anlikFiltrelenmisListe.length === 0) return showToast('Dışa aktarılacak kayıt yok!', 'error');
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l');
+        doc.setFontSize(16);
+        doc.text("Gider Raporu", 14, 18);
+        doc.setFontSize(10);
+        doc.setTextColor(150);
+        doc.text(`Tarih: ${new Date().toLocaleDateString('tr-TR')} — Toplam ${anlikFiltrelenmisListe.length} kayıt`, 14, 25);
+        doc.autoTable({
+            head: [["Gider Adı", "Kategori", "Proje", "Tutar (₺)", "Tür", "Tarih", "Durum"]],
+            body: anlikFiltrelenmisListe.map(g => [g.adi, g.kategori, g.proje, fmt(g.fiyat), g.turu, g.tarih, g.durum]),
+            startY: 30,
+            styles: { fontSize: 10 },
+            headStyles: { fillColor: [59, 130, 246] }
+        });
+        doc.save("Gider_Raporu.pdf");
+        showToast('PDF indirildi!');
+    }
+
+    // ========== MODAL DIŞINDAKİ TIKLAMA ==========
+    document.getElementById('expenseModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    // ========== INIT ==========
+    window.onload = function() {
+        dropdownlariGuncelle();
+        sayfaDegistir('dashboard');
+    };
+</script>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW kayıtlı:', reg.scope))
+            .catch(err => console.log('SW hatası:', err));
+        });
+      }
+
+      // PWA yükleme banner
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('pwa-install-bar').style.display = 'flex';
+      });
+
+      function installPWA() {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+          deferredPrompt = null;
+          document.getElementById('pwa-install-bar').style.display = 'none';
+        });
+      }
+
+      window.addEventListener('appinstalled', () => {
+        document.getElementById('pwa-install-bar').style.display = 'none';
+      });
+    </script>
+</body>
+</html>
